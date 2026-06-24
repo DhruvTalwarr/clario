@@ -6,7 +6,7 @@ import LanguageSelector from "@/components/LanguageSelector";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
-import { Mic, MicOff, Play, Link as LinkIcon, Loader2 } from "lucide-react";
+import { Captions, FileText, Mic, MicOff, Play, Link as LinkIcon, Loader2, Sparkles } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 
 declare global {
@@ -175,15 +175,35 @@ const LiveCaptioning = () => {
       <Navbar />
 
       <main className="flex-1 max-w-7xl mx-auto w-full px-4 sm:px-6 lg:px-8 py-8">
-        <div className="mb-6 flex flex-col gap-4 lg:flex-row lg:items-end lg:justify-between">
-          <div>
-            <h1 className="text-3xl font-bold mb-2">Live Captioning</h1>
-            <p className="text-muted-foreground">
-              Generate simplified captions from YouTube links or real-time speech.
-            </p>
+        <section className="mb-8 rounded-[1.5rem] border border-primary/15 bg-gradient-to-br from-primary/10 via-background to-accent/20 p-6 shadow-lg sm:p-8">
+          <div className="flex flex-col gap-6 lg:flex-row lg:items-end lg:justify-between">
+            <div className="max-w-3xl space-y-4">
+              <div className="inline-flex items-center gap-2 rounded-full bg-primary/10 px-4 py-2 text-sm font-semibold text-primary">
+                <Captions className="h-4 w-4" />
+                Live accessibility studio
+              </div>
+              <div>
+                <h1 className="text-3xl font-bold leading-tight lg:text-5xl">Turning Conversations into Clarity</h1>
+                <p className="mt-4 text-lg leading-relaxed text-muted-foreground">
+                  Capture live speech and transform it into accurate, real-time captions. Upload videos to generate transcripts, simplified summaries, and key insights, making content more accessible, searchable, and easier to understand for everyone.
+                </p>
+              </div>
+              <div className="grid gap-3 sm:grid-cols-3">
+                {[
+                  { icon: Mic, text: "Start the mic" },
+                  { icon: FileText, text: "Review transcript" },
+                  { icon: Sparkles, text: "Read simplified output" },
+                ].map(({ icon: Icon, text }) => (
+                  <div key={text} className="flex items-center gap-2 rounded-xl border border-primary/10 bg-background/70 px-3 py-2 text-sm font-semibold">
+                    <Icon className="h-4 w-4 text-primary" />
+                    {text}
+                  </div>
+                ))}
+              </div>
+            </div>
+            <LanguageSelector value={language} onValueChange={setLanguage} />
           </div>
-          <LanguageSelector value={language} onValueChange={setLanguage} />
-        </div>
+        </section>
 
         <div className="grid gap-5 lg:grid-cols-2">
           <Card className="rounded-lg border-2">

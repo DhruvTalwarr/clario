@@ -8,85 +8,84 @@ All colors MUST be HSL.
 
 @layer base {
   :root {
-    /* Clario Design System - Accessibility First */
-    --background: 210 20% 98%;
-    --foreground: 215 25% 27%;
+    --background: 36 56% 97%;
+    --foreground: 266 36% 16%;
 
-    --card: 0 0% 100%;
-    --card-foreground: 215 25% 27%;
+    --card: 36 68% 99%;
+    --card-foreground: 266 36% 16%;
 
-    --popover: 0 0% 100%;
-    --popover-foreground: 215 25% 27%;
+    --popover: 36 68% 99%;
+    --popover-foreground: 266 36% 16%;
 
-    --primary: 221 83% 53%;
+    --primary: 264 58% 48%;
     --primary-foreground: 0 0% 100%;
 
-    --secondary: 215 16% 47%;
-    --secondary-foreground: 0 0% 100%;
+    --secondary: 269 42% 88%;
+    --secondary-foreground: 266 36% 16%;
 
-    --muted: 210 40% 96.1%;
-    --muted-foreground: 215 16% 47%;
+    --muted: 35 52% 92%;
+    --muted-foreground: 268 18% 42%;
 
-    --accent: 38 92% 50%;
-    --accent-foreground: 0 0% 100%;
+    --accent: 33 68% 72%;
+    --accent-foreground: 266 36% 16%;
 
     --destructive: 0 84% 60%;
     --destructive-foreground: 0 0% 100%;
 
-    --success: 142 71% 45%;
+    --success: 152 47% 38%;
     --success-foreground: 0 0% 100%;
 
-    --border: 214.3 31.8% 91.4%;
-    --input: 0 0% 100%;
-    --ring: 221 83% 53%;
+    --border: 269 32% 86%;
+    --input: 36 68% 99%;
+    --ring: 264 58% 48%;
 
-    --radius: 1rem;
+    --radius: 0.75rem;
 
     /* Emotion-aware colors */
-    --emotion-calm: 200 80% 60%;
-    --emotion-focus: 221 83% 53%;
-    --emotion-alert: 38 92% 50%;
+    --emotion-calm: 269 42% 66%;
+    --emotion-focus: 264 50% 51%;
+    --emotion-alert: 31 63% 68%;
     
     /* Gradients */
-    --gradient-hero: linear-gradient(135deg, hsl(221 83% 53%) 0%, hsl(200 80% 60%) 100%);
-    --gradient-card: linear-gradient(180deg, hsl(0 0% 100%) 0%, hsl(210 20% 98%) 100%);
+    --gradient-hero: linear-gradient(135deg, hsl(264 58% 48%) 0%, hsl(270 72% 66%) 52%, hsl(33 68% 72%) 100%);
+    --gradient-card: linear-gradient(180deg, hsl(36 68% 99%) 0%, hsl(35 52% 94%) 100%);
     
     /* Shadows */
-    --shadow-soft: 0 4px 6px -1px hsl(215 25% 27% / 0.1), 0 2px 4px -1px hsl(215 25% 27% / 0.06);
-    --shadow-medium: 0 10px 15px -3px hsl(215 25% 27% / 0.1), 0 4px 6px -2px hsl(215 25% 27% / 0.05);
-    --shadow-large: 0 20px 25px -5px hsl(215 25% 27% / 0.1), 0 10px 10px -5px hsl(215 25% 27% / 0.04);
+    --shadow-soft: 0 8px 22px hsl(264 58% 34% / 0.08);
+    --shadow-medium: 0 18px 34px hsl(264 58% 34% / 0.12);
+    --shadow-large: 0 28px 58px hsl(264 58% 34% / 0.18);
 
-    --sidebar-background: 0 0% 98%;
-    --sidebar-foreground: 215 25% 27%;
-    --sidebar-primary: 221 83% 53%;
+    --sidebar-background: 36 56% 97%;
+    --sidebar-foreground: 266 36% 16%;
+    --sidebar-primary: 264 58% 48%;
     --sidebar-primary-foreground: 0 0% 100%;
-    --sidebar-accent: 210 40% 96.1%;
-    --sidebar-accent-foreground: 215 25% 27%;
-    --sidebar-border: 214.3 31.8% 91.4%;
-    --sidebar-ring: 221 83% 53%;
+    --sidebar-accent: 35 52% 92%;
+    --sidebar-accent-foreground: 266 36% 16%;
+    --sidebar-border: 269 32% 86%;
+    --sidebar-ring: 264 58% 48%;
   }
 
   .dark {
-    --background: 215 28% 17%;
-    --foreground: 210 20% 98%;
+    --background: 268 30% 12%;
+    --foreground: 34 52% 96%;
 
-    --card: 215 28% 17%;
-    --card-foreground: 210 20% 98%;
+    --card: 268 27% 16%;
+    --card-foreground: 34 52% 96%;
 
     --popover: 215 28% 17%;
     --popover-foreground: 210 20% 98%;
 
-    --primary: 221 83% 53%;
+    --primary: 270 70% 70%;
     --primary-foreground: 0 0% 100%;
 
-    --secondary: 215 25% 27%;
-    --secondary-foreground: 210 20% 98%;
+    --secondary: 268 21% 24%;
+    --secondary-foreground: 34 52% 96%;
 
-    --muted: 215 25% 27%;
-    --muted-foreground: 215 16% 47%;
+    --muted: 268 21% 24%;
+    --muted-foreground: 32 24% 75%;
 
-    --accent: 38 92% 50%;
-    --accent-foreground: 0 0% 100%;
+    --accent: 31 63% 68%;
+    --accent-foreground: 267 32% 17%;
 
     --destructive: 0 84% 60%;
     --destructive-foreground: 0 0% 100%;
@@ -94,9 +93,9 @@ All colors MUST be HSL.
     --success: 142 71% 45%;
     --success-foreground: 0 0% 100%;
 
-    --border: 215 25% 27%;
-    --input: 215 25% 27%;
-    --ring: 221 83% 53%;
+    --border: 268 21% 28%;
+    --input: 268 21% 20%;
+    --ring: 270 70% 70%;
     
     --sidebar-background: 215 28% 17%;
     --sidebar-foreground: 210 20% 98%;
@@ -117,6 +116,10 @@ All colors MUST be HSL.
   body {
     @apply bg-background text-foreground font-sans antialiased;
     font-feature-settings: "rlig" 1, "calt" 1;
+    background-image:
+      linear-gradient(180deg, hsl(var(--background)), hsl(var(--muted) / 0.42)),
+      radial-gradient(circle at 12% 8%, hsl(var(--primary) / 0.1), transparent 28%),
+      radial-gradient(circle at 88% 12%, hsl(var(--accent) / 0.16), transparent 26%);
   }
 
   h1 {

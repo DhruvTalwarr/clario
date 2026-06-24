@@ -1,67 +1,32 @@
 import { Link } from "react-router-dom";
 import { Button } from "@/components/ui/button";
-import { Menu, X, Subtitles } from "lucide-react";
+import { Menu, X } from "lucide-react";
 import { useState } from "react";
 import ThemeToggle from "@/components/ThemeToggle";
+import ClarioLogo from "@/components/ClarioLogo";
+
+const navLinks = [
+  { label: "Live Captioning", path: "/live-captioning" },
+  { label: "Text to Avatar", path: "/text-to-avatar" },
+  { label: "About", path: "/about" },
+];
 
 const Navbar = () => {
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
   const toggleMobileMenu = () => setMobileMenuOpen(!mobileMenuOpen);
 
   return (
-    <nav
-      className="
-        sticky top-0 z-50 
-        bg-gradient-to-r from-blue-500/10 via-purple-500/10 to-cyan-500/10 
-        backdrop-blur-xl 
-        border-b border-blue-500/20 
-        shadow-[0_4px_30px_rgba(59,130,246,0.1)] 
-        animate-fade-in
-      "
-    >
-      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-        <div className="flex justify-between items-center h-16">
-          {/* 🌈 Logo */}
-          <Link to="/" className="flex items-center gap-2 group">
-            <div
-              className="
-                bg-gradient-to-r from-blue-500 to-purple-500 
-                rounded-xl p-2 
-                shadow-md shadow-blue-500/20 
-                group-hover:scale-110 group-hover:shadow-blue-500/40 
-                transition-all duration-300
-              "
-            >
-              <Subtitles className="h-6 w-6 text-white" />
-            </div>
-            <span
-              className="
-                text-xl font-extrabold 
-                bg-gradient-to-r from-blue-500 via-purple-500 to-cyan-400 
-                bg-clip-text text-transparent
-              "
-            >
-              Clario
-            </span>
-          </Link>
+    <nav className="sticky top-0 z-50 border-b border-primary/20 bg-background/90 shadow-[0_10px_30px_hsl(var(--primary)/0.1)] backdrop-blur-2xl animate-fade-in">
+      <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
+        <div className="flex h-14 items-center justify-between">
+          <ClarioLogo />
 
-          {/* 💻 Desktop Navigation */}
-          <div className="hidden md:flex items-center gap-6">
-            {[
-              { label: "Live Captioning", path: "/live-captioning" },
-              { label: "Text to Avatar", path: "/text-to-avatar" },
-              { label: "About", path: "/about" },
-            ].map((link) => (
+          <div className="hidden items-center gap-5 rounded-full border border-primary/10 bg-background/55 px-2 py-1 md:flex">
+            {navLinks.map((link) => (
               <Link
                 key={link.path}
                 to={link.path}
-                className="
-                  relative font-medium text-foreground 
-                  hover:text-blue-500 transition-all duration-300
-                  after:content-[''] after:absolute after:left-0 after:-bottom-1 
-                  after:w-0 after:h-[2px] after:bg-gradient-to-r after:from-blue-500 after:to-purple-500 
-                  hover:after:w-full after:transition-all after:duration-300
-                "
+                className="rounded-full px-3 py-2 text-sm font-semibold text-foreground transition-all duration-300 hover:bg-primary/10 hover:text-primary"
               >
                 {link.label}
               </Link>
@@ -69,76 +34,35 @@ const Navbar = () => {
 
             <ThemeToggle />
 
-            <Button
-              asChild
-              size="sm"
-              className="
-                bg-gradient-to-r from-blue-500 to-purple-500 
-                hover:from-purple-500 hover:to-cyan-400 
-                text-white font-semibold rounded-xl shadow-md 
-                hover:shadow-blue-500/40 transition-all
-              "
-            >
+            <Button asChild size="sm" className="rounded-full bg-gradient-to-r from-primary via-[#8f5cf7] to-accent px-5 font-semibold text-white shadow-md transition-all hover:-translate-y-0.5 hover:shadow-primary/30">
               <Link to="/live-captioning">Get Started</Link>
             </Button>
           </div>
 
-          {/* 📱 Mobile Menu Toggle */}
           <button
             onClick={toggleMobileMenu}
-            className="
-              md:hidden p-2 rounded-lg 
-              hover:bg-gradient-to-r hover:from-blue-500/20 hover:to-purple-500/20 
-              transition-all duration-300
-            "
+            className="rounded-full border border-primary/15 bg-background/70 p-2 transition-all duration-300 hover:bg-primary/10 md:hidden"
             aria-label="Toggle menu"
           >
-            {mobileMenuOpen ? (
-              <X className="h-6 w-6 text-foreground" />
-            ) : (
-              <Menu className="h-6 w-6 text-foreground" />
-            )}
+            {mobileMenuOpen ? <X className="h-6 w-6 text-foreground" /> : <Menu className="h-6 w-6 text-foreground" />}
           </button>
         </div>
 
-        {/* 📜 Mobile Menu */}
         {mobileMenuOpen && (
-          <div
-            className="
-              md:hidden py-4 border-t border-blue-500/20 
-              animate-fade-in backdrop-blur-lg bg-gradient-to-b from-blue-500/10 via-purple-500/10 to-transparent
-            "
-          >
+          <div className="border-t border-primary/15 bg-background/95 py-4 backdrop-blur-lg animate-fade-in md:hidden">
             <div className="flex flex-col gap-4">
-              {[
-                { label: "Live Captioning", path: "/live-captioning" },
-                { label: "Text to Avatar", path: "/text-to-avatar" },
-                { label: "About", path: "/about" },
-              ].map((link) => (
+              {navLinks.map((link) => (
                 <Link
                   key={link.path}
                   to={link.path}
                   onClick={toggleMobileMenu}
-                  className="
-                    text-foreground hover:text-blue-500 
-                    transition-all font-medium py-2 
-                    hover:translate-x-1
-                  "
+                  className="py-2 font-medium text-foreground transition-all hover:translate-x-1 hover:text-primary"
                 >
                   {link.label}
                 </Link>
               ))}
 
-              <Button
-                asChild
-                size="sm"
-                className="
-                  bg-gradient-to-r from-blue-500 to-purple-500 
-                  hover:from-purple-500 hover:to-cyan-400 
-                  text-white font-semibold rounded-xl shadow-md 
-                  hover:shadow-blue-500/40 transition-all
-                "
-              >
+              <Button asChild size="sm" className="rounded-xl bg-gradient-to-r from-primary via-[#8f5cf7] to-accent font-semibold text-white shadow-md transition-all hover:shadow-primary/30">
                 <Link to="/live-captioning" onClick={toggleMobileMenu}>
                   Get Started
                 </Link>

@@ -6,7 +6,7 @@ import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
 import { Textarea } from "@/components/ui/textarea";
 import { Badge } from "@/components/ui/badge";
-import { Mic, Play, RotateCcw, Square } from "lucide-react";
+import { Hand, Mic, Play, RotateCcw, Sparkles, Square, Type } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 
 declare global {
@@ -256,12 +256,33 @@ const TextToAvatar = () => {
       <Navbar />
 
       <main className="flex-1 max-w-7xl mx-auto w-full px-4 sm:px-6 lg:px-8 py-8">
-        <div className="mb-8">
-          <h1 className="text-3xl font-bold mb-2">Text to ISL Avatar</h1>
-          <p className="text-muted-foreground">
-            Convert typed or spoken text into local Indian Sign Language video animations.
-          </p>
-        </div>
+        <section className="mb-8 rounded-[1.5rem] border border-primary/15 bg-gradient-to-br from-primary/10 via-background to-accent/20 p-6 shadow-lg sm:p-8">
+          <div className="max-w-4xl space-y-4">
+            <div className="inline-flex items-center gap-2 rounded-full bg-primary/10 px-4 py-2 text-sm font-semibold text-primary">
+              <Hand className="h-4 w-4" />
+              Sign generation studio
+            </div>
+            <div>
+              <h1 className="text-3xl font-bold leading-tight lg:text-5xl">From Voice to Visual Understanding</h1>
+              <p className="mt-2 text-xl font-semibold text-primary">Break Communication Barriers</p>
+              <p className="mt-4 text-lg leading-relaxed text-muted-foreground">
+                Convert speech and text into expressive Indian Sign Language animations in real time. Empower conversations, improve accessibility, and create a more inclusive digital experience for everyone.
+              </p>
+            </div>
+            <div className="grid gap-3 sm:grid-cols-3">
+              {[
+                { icon: Type, text: "Type or speak" },
+                { icon: Sparkles, text: "Generate signs" },
+                { icon: Play, text: "Watch playback" },
+              ].map(({ icon: Icon, text }) => (
+                <div key={text} className="flex items-center gap-2 rounded-xl border border-primary/10 bg-background/70 px-3 py-2 text-sm font-semibold">
+                  <Icon className="h-4 w-4 text-primary" />
+                  {text}
+                </div>
+              ))}
+            </div>
+          </div>
+        </section>
 
         <div className="grid gap-5 lg:grid-cols-2">
           <Card className="h-full rounded-lg border-2">
