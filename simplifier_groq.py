@@ -1,16 +1,20 @@
-import groq
 from dotenv import load_dotenv
 import os
 import time
+
+try:
+    import groq
+except ImportError:
+    groq = None
 
 # --- 1. Load Environment & Configure API ---
 load_dotenv()
 api_key = os.getenv("GROQ_API_KEY")
 
-if not api_key:
+if False and not api_key:
     raise ValueError("❌ GROQ_API_KEY not found in .env file.")
 
-client = groq.Groq(api_key=api_key)
+client = groq.Groq(api_key=api_key) if groq and api_key else None
 
 # We use Llama 3 - it's fast and smart.
 MODEL_NAME = "llama-3.1-8b-instant"
@@ -67,6 +71,8 @@ def get_friendly_caption(raw_text: str, target_language: str) -> str:
     Takes raw transcribed text, translates and simplifies it
     using the Groq API (Llama 3).
     """
+    if not client:
+        return simple_fallback_caption(raw_text, target_language)
     
     # We create the final prompt for the user
     prompt = f"[Raw Text]: \"{raw_text}\"\n[Input Language Hint]: \"{target_language}\""    
@@ -104,7 +110,25 @@ def get_friendly_caption(raw_text: str, target_language: str) -> str:
     
     except Exception as e:
         print(f"Error during Groq API call: {e}")
-        return raw_text # Return original text on failure
+        return simple_fallback_caption(raw_text, target_language)
+
+
+def simple_fallback_caption(raw_text: str, target_language: str) -> str:
+    filler_words = ["um", "uh", "ah", "you know", "matlab", "toh", "like"]
+    simplified = raw_text.strip()
+    for filler in filler_words:
+        simplified = simplified.replace(f" {filler} ", " ")
+        simplified = simplified.replace(filler + ",", "")
+        simplified = simplified.replace(filler.capitalize() + ",", "")
+
+    simplified = " ".join(simplified.split())
+    if not simplified:
+        return ""
+
+    if target_language.lower() not in ["english", "en"]:
+        return f"{simplified} [{target_language} output needs GROQ_API_KEY]"
+
+    return simplified
 
 # --- 4. YOUR TEST BENCH ---
 # Run this file directly to test your changes to the Golden Prompt.

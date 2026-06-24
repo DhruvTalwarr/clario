@@ -16,7 +16,7 @@ except ImportError:
     exit()
 
 # --- Import transcription logic ---
-from latent import StreamingTranscriber, transcribe_audio
+from latent import StreamingTranscriber, transcribe_audio, transcribe_youtube_url
 
 # --- Configuration ---
 CORS_ALLOW_ORIGINS = ["*"]
@@ -50,6 +50,10 @@ class SimplifyRequest(BaseModel):
 class SimplifyResponse(BaseModel):
     raw_text: str
     simple_text: str
+
+class YoutubeRequest(BaseModel):
+    url: Annotated[str, StringConstraints(min_length=5)]
+    language: Annotated[str, StringConstraints(min_length=2)] = "english"
 
 # =========================
 # 🔹 HEALTH CHECK
@@ -86,6 +90,19 @@ async def simplify_text_endpoint(request: SimplifyRequest):
 # =========================
 # 🔹 FILE UPLOAD (TRANSCRIPTION)
 # =========================
+@app.post("/process-youtube", response_model=SimplifyResponse)
+async def process_youtube_endpoint(request: YoutubeRequest):
+    """
+    Downloads audio from a YouTube/online URL, transcribes it, and returns simplified text.
+    """
+    try:
+        raw_text = transcribe_youtube_url(request.url, selected_lang=request.language)
+        simple_text = get_friendly_caption(raw_text=raw_text, target_language=request.language)
+        return SimplifyResponse(raw_text=raw_text, simple_text=simple_text)
+    except Exception as e:
+        print("URL processing failed:", e)
+        raise HTTPException(status_code=500, detail=str(e))
+
 @app.post("/live-caption")
 async def live_caption(file: UploadFile, language: str = "english"):
     """
