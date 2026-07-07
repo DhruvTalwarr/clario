@@ -41,6 +41,9 @@ const LiveCaptioning = () => {
   const { toast } = useToast();
   const recognitionRef = useRef<SpeechRecognition | null>(null);
   const systemAudioWsRef = useRef<WebSocket | null>(null);
+  const screenStreamRef = useRef<MediaStream | null>(null);
+  const audioContextRef = useRef<AudioContext | null>(null);
+  const processorNodeRef = useRef<ScriptProcessorNode | null>(null);
   
   const [audioSource, setAudioSource] = useState<"mic" | "system">("mic");
   const [language, setLanguage] = useState("en");
@@ -56,6 +59,12 @@ const LiveCaptioning = () => {
     return () => {
       if (systemAudioWsRef.current) {
         systemAudioWsRef.current.close();
+      }
+      if (screenStreamRef.current) {
+        screenStreamRef.current.getTracks().forEach(t => t.stop());
+      }
+      if (audioContextRef.current) {
+        audioContextRef.current.close();
       }
     };
   }, []);
@@ -144,77 +153,134 @@ const LiveCaptioning = () => {
     setIsListening(false);
   };
 
-  const startSystemAudioCaptioning = () => {
-    // System audio loopback capture must always connect to the local host PC running the backend
-    const wsUrl = "ws://127.0.0.1:8000/ws/system-audio";
-
-    const ws = new WebSocket(wsUrl);
-    systemAudioWsRef.current = ws;
-
-    ws.onopen = () => {
-      setIsListening(true);
-      ws.send(JSON.stringify({
-        simplify: true,
-        model: "small",
-      }));
-    };
-
-    ws.onmessage = (event) => {
-      try {
-        const payload = JSON.parse(event.data);
-        if (payload.error) {
-          toast({
-            title: "System Audio Error",
-            description: payload.error,
-            variant: "destructive",
-          });
-          stopSystemAudioCaptioning();
-          return;
-        }
-
-        const confirmed = payload.confirmed || "";
-        const partial = payload.partial || "";
-        
-        const rawCombined = `${confirmed} ${partial}`.trim();
-        if (rawCombined) {
-          setLiveRawText(rawCombined);
-        }
-
-        if (payload.simplified) {
-          setLiveSimpleText(payload.simplified);
-        } else if (confirmed) {
-          setLiveSimpleText(confirmed);
-        }
-      } catch (err) {
-        console.error("Error parsing WebSocket message:", err);
-      }
-    };
-
-    ws.onerror = (err) => {
-      console.error("WebSocket error:", err);
-      toast({
-        title: "Connection Error",
-        description: "Failed to connect to loopback audio backend. Make sure the FastAPI backend is running.",
-        variant: "destructive",
+  const startSystemAudioCaptioning = async () => {
+    try {
+      // 1. Capture system audio via getDisplayMedia
+      const stream = await navigator.mediaDevices.getDisplayMedia({
+        video: {
+          width: 1,
+          height: 1,
+          frameRate: 1,
+        },
+        audio: true,
       });
-      setIsListening(false);
-    };
 
-    ws.onclose = () => {
+      const audioTracks = stream.getAudioTracks();
+      if (audioTracks.length === 0) {
+        stream.getTracks().forEach(t => t.stop());
+        toast({
+          title: "Audio sharing required",
+          description: "Please check 'Share audio' when choosing a screen or tab to capture system audio.",
+          variant: "destructive",
+        });
+        return;
+      }
+
+      screenStreamRef.current = stream;
+
+      // 2. Setup WebSocket connection to the cloud backend
+      const wsProto = window.location.protocol === "https:" ? "wss:" : "ws:";
+      const wsHost = API_BASE.replace(/^https?:\/\//, "");
+      const wsUrl = `${wsProto}//${wsHost}/ws/live-caption`;
+
+      const ws = new WebSocket(wsUrl);
+      systemAudioWsRef.current = ws;
+
+      ws.onopen = () => {
+        setIsListening(true);
+        // Send initial language selection
+        ws.send(language === "en" ? "english" : language);
+
+        // 3. Setup AudioContext to capture PCM bytes
+        try {
+          const audioContext = new (window.AudioContext || (window as any).webkitAudioContext)({ sampleRate: 16000 });
+          audioContextRef.current = audioContext;
+
+          const source = audioContext.createMediaStreamSource(stream);
+          const processor = audioContext.createScriptProcessor(4096, 1, 1);
+          processorNodeRef.current = processor;
+
+          processor.onaudioprocess = (e) => {
+            if (ws.readyState === WebSocket.OPEN) {
+              const inputData = e.inputBuffer.getChannelData(0);
+              const pcmData = new Int16Array(inputData.length);
+              for (let i = 0; i < inputData.length; i++) {
+                const s = Math.max(-1, Math.min(1, inputData[i]));
+                pcmData[i] = s < 0 ? s * 0x8000 : s * 0x7FFF;
+              }
+              ws.send(pcmData.buffer);
+            }
+          };
+
+          source.connect(processor);
+          processor.connect(audioContext.destination);
+        } catch (err) {
+          console.error("Audio Context initialization error:", err);
+        }
+      };
+
+      ws.onmessage = (event) => {
+        const text = event.data.trim();
+        if (text) {
+          setLiveRawText((prev) => {
+            const updated = prev ? `${prev} ${text}` : text;
+            simplifySpeech(updated);
+            return updated;
+          });
+        }
+      };
+
+      ws.onerror = (err) => {
+        console.error("WebSocket error:", err);
+        toast({
+          title: "Connection Error",
+          description: "Failed to connect to the cloud transcription backend.",
+          variant: "destructive",
+        });
+        stopSystemAudioCaptioning();
+      };
+
+      ws.onclose = () => {
+        stopSystemAudioCaptioning();
+      };
+
+    } catch (err: any) {
+      console.error("System audio capture error:", err);
+      if (err.name !== "NotAllowedError") {
+        toast({
+          title: "Capture Failed",
+          description: "Could not start browser audio loopback capture.",
+          variant: "destructive",
+        });
+      }
       setIsListening(false);
-      systemAudioWsRef.current = null;
-    };
+    }
   };
 
   const stopSystemAudioCaptioning = () => {
     if (systemAudioWsRef.current) {
       try {
-        systemAudioWsRef.current.send("stop");
         systemAudioWsRef.current.close();
-      } catch (err) {
-        console.error(err);
-      }
+      } catch (err) {}
       systemAudioWsRef.current = null;
+    }
+    if (processorNodeRef.current) {
+      try {
+        processorNodeRef.current.disconnect();
+      } catch (err) {}
+      processorNodeRef.current = null;
+    }
+    if (audioContextRef.current) {
+      try {
+        audioContextRef.current.close();
+      } catch (err) {}
+      audioContextRef.current = null;
+    }
+    if (screenStreamRef.current) {
+      try {
+        screenStreamRef.current.getTracks().forEach(t => t.stop());
+      } catch (err) {}
+      screenStreamRef.current = null;
     }
     setIsListening(false);
   };
