@@ -25,10 +25,18 @@ LANGUAGE_CODES = {
     "odia": "or",
 }
 
+_cached_model = None
+
+def get_whisper_model():
+    global _cached_model
+    if _cached_model is None:
+        print("🚀 Loading Whisper 'base' model into cache...")
+        _cached_model = WhisperModel("base", device="cpu", compute_type="float32")
+    return _cached_model
+
 class StreamingTranscriber:
     def __init__(self):
-        print("🚀 Initializing Whisper model...")
-        self.model = WhisperModel("base", device="cpu", compute_type="float32")
+        self.model = get_whisper_model()
         self.sample_rate = 16000
         self.buffer = np.array([], dtype=np.float32)
         self.prev_text = ""
@@ -67,7 +75,7 @@ def transcribe_audio(file_path, selected_lang="english") -> str:
     """
     print("📂 Transcribing uploaded file:", getattr(file_path, "name", file_path))
 
-    model = WhisperModel("base", device="cpu", compute_type="float32")
+    model = get_whisper_model()
     lang_code = LANGUAGE_CODES.get(selected_lang.lower(), "en")
 
     segments, _ = model.transcribe(file_path, language=lang_code)

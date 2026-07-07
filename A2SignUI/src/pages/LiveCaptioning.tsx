@@ -1,4 +1,4 @@
-import { useRef, useState } from "react";
+import { useRef, useState, useEffect } from "react";
 import Navbar from "@/components/Navbar";
 import Footer from "@/components/Footer";
 import HelpPopover from "@/components/HelpPopover";
@@ -40,6 +40,9 @@ const toBackendLanguage = (language: string) => languageNames[language] || "engl
 const LiveCaptioning = () => {
   const { toast } = useToast();
   const recognitionRef = useRef<SpeechRecognition | null>(null);
+  const systemAudioWsRef = useRef<WebSocket | null>(null);
+  
+  const [audioSource, setAudioSource] = useState<"mic" | "system">("mic");
   const [language, setLanguage] = useState("en");
   const [youtubeUrl, setYoutubeUrl] = useState("");
   const [liveRawText, setLiveRawText] = useState("");
@@ -48,6 +51,14 @@ const LiveCaptioning = () => {
   const [isListening, setIsListening] = useState(false);
   const [isProcessingUrl, setIsProcessingUrl] = useState(false);
   const [isSimplifyingSpeech, setIsSimplifyingSpeech] = useState(false);
+
+  useEffect(() => {
+    return () => {
+      if (systemAudioWsRef.current) {
+        systemAudioWsRef.current.close();
+      }
+    };
+  }, []);
 
   const simplifySpeech = async (text: string) => {
     if (!text.trim()) return;
@@ -79,7 +90,7 @@ const LiveCaptioning = () => {
     }
   };
 
-  const startListening = () => {
+  const startMicListening = () => {
     const SpeechRecognitionApi = window.SpeechRecognition || window.webkitSpeechRecognition;
 
     if (!SpeechRecognitionApi) {
@@ -128,9 +139,101 @@ const LiveCaptioning = () => {
     recognition.start();
   };
 
-  const stopListening = () => {
+  const stopMicListening = () => {
     recognitionRef.current?.stop();
     setIsListening(false);
+  };
+
+  const startSystemAudioCaptioning = () => {
+    const wsProto = window.location.protocol === "https:" ? "wss:" : "ws:";
+    const wsHost = API_BASE.replace(/^https?:\/\//, "");
+    const wsUrl = `${wsProto}//${wsHost}/ws/system-audio`;
+
+    const ws = new WebSocket(wsUrl);
+    systemAudioWsRef.current = ws;
+
+    ws.onopen = () => {
+      setIsListening(true);
+      ws.send(JSON.stringify({
+        simplify: true,
+        model: "small",
+      }));
+    };
+
+    ws.onmessage = (event) => {
+      try {
+        const payload = JSON.parse(event.data);
+        if (payload.error) {
+          toast({
+            title: "System Audio Error",
+            description: payload.error,
+            variant: "destructive",
+          });
+          stopSystemAudioCaptioning();
+          return;
+        }
+
+        const confirmed = payload.confirmed || "";
+        const partial = payload.partial || "";
+        
+        const rawCombined = `${confirmed} ${partial}`.trim();
+        if (rawCombined) {
+          setLiveRawText(rawCombined);
+        }
+
+        if (payload.simplified) {
+          setLiveSimpleText(payload.simplified);
+        } else if (confirmed) {
+          setLiveSimpleText(confirmed);
+        }
+      } catch (err) {
+        console.error("Error parsing WebSocket message:", err);
+      }
+    };
+
+    ws.onerror = (err) => {
+      console.error("WebSocket error:", err);
+      toast({
+        title: "Connection Error",
+        description: "Failed to connect to loopback audio backend. Make sure the FastAPI backend is running.",
+        variant: "destructive",
+      });
+      setIsListening(false);
+    };
+
+    ws.onclose = () => {
+      setIsListening(false);
+      systemAudioWsRef.current = null;
+    };
+  };
+
+  const stopSystemAudioCaptioning = () => {
+    if (systemAudioWsRef.current) {
+      try {
+        systemAudioWsRef.current.send("stop");
+        systemAudioWsRef.current.close();
+      } catch (err) {
+        console.error(err);
+      }
+      systemAudioWsRef.current = null;
+    }
+    setIsListening(false);
+  };
+
+  const startListening = () => {
+    if (audioSource === "system") {
+      startSystemAudioCaptioning();
+    } else {
+      startMicListening();
+    }
+  };
+
+  const stopListening = () => {
+    if (audioSource === "system") {
+      stopSystemAudioCaptioning();
+    } else {
+      stopMicListening();
+    }
   };
 
   const processYoutube = async () => {
@@ -242,12 +345,40 @@ const LiveCaptioning = () => {
             <CardContent className="p-5 space-y-4">
               <div className="flex items-start justify-between gap-3">
                 <div>
-                  <h2 className="text-xl font-semibold">Real-Time Speech</h2>
+                  <h2 className="text-xl font-semibold">Real-Time Speech & System Audio</h2>
                   <p className="text-sm text-muted-foreground">
-                    Speak into the mic and receive a simplified caption.
+                    {audioSource === "mic"
+                      ? "Speak into the mic and receive a simplified caption."
+                      : "Listen to any audio playing on your laptop/system in real-time."}
                   </p>
                 </div>
                 {isListening && <Badge>Listening</Badge>}
+              </div>
+
+              <div className="flex items-center gap-3 bg-muted/40 p-2.5 rounded-lg border">
+                <span className="text-sm font-medium">Audio Source:</span>
+                <div className="flex gap-2">
+                  <Button
+                    type="button"
+                    variant={audioSource === "mic" ? "hero" : "outline"}
+                    size="sm"
+                    onClick={() => !isListening && setAudioSource("mic")}
+                    disabled={isListening}
+                    className="h-8"
+                  >
+                    Microphone
+                  </Button>
+                  <Button
+                    type="button"
+                    variant={audioSource === "system" ? "hero" : "outline"}
+                    size="sm"
+                    onClick={() => !isListening && setAudioSource("system")}
+                    disabled={isListening}
+                    className="h-8"
+                  >
+                    System Audio (WASAPI)
+                  </Button>
+                </div>
               </div>
 
               <div className="grid gap-3 sm:grid-cols-2">

@@ -24,10 +24,10 @@ CORS_ALLOW_ORIGINS = ["*"]
 # --- Lifespan ---
 @asynccontextmanager
 async def lifespan(app: FastAPI):
-    print("--- 🚀 AI Backend is starting up... ---")
-    print("✅ 'get_friendly_caption' function is loaded.")
+    print("--- [START] AI Backend is starting up... ---")
+    print("[SUCCESS] 'get_friendly_caption' function is loaded.")
     yield
-    print("--- 🛑 AI Backend is shutting down... ---")
+    print("--- [STOP] AI Backend is shutting down... ---")
 
 app = FastAPI(lifespan=lifespan)
 
@@ -140,6 +140,110 @@ async def websocket_live_caption(websocket: WebSocket):
 
     except Exception as e:
         print("WebSocket closed:", e)
+
+# =========================
+# 🔹 WASAPI SYSTEM AUDIO STREAMING
+# =========================
+@app.websocket("/ws/system-audio")
+async def websocket_system_audio(websocket: WebSocket):
+    """
+    Captures local Windows WASAPI system loopback audio, transcribes it, 
+    and streams live captions back to the client.
+    """
+    await websocket.accept()
+    
+    import asyncio
+    import queue
+    import threading
+    from system_audio import (
+        AudioRingBuffer,
+        WasapiHelper,
+        WasapiLoopbackCapture,
+        WhisperStreamingWorker,
+        TARGET_SR,
+        DEFAULT_BLOCK_MS
+    )
+    
+    helper = WasapiHelper()
+    device = helper.get_default_loopback()
+    
+    if not device:
+        await websocket.send_json({"error": "No WASAPI loopback device found on host PC."})
+        await websocket.close()
+        return
+
+    stop_event = threading.Event()
+    ring = AudioRingBuffer(max_seconds=14, sample_rate=TARGET_SR)
+    update_queue = queue.Queue()
+    
+    def on_caption_update(payload):
+        update_queue.put(payload)
+
+    # Read selected settings (sent as JSON on initial connection)
+    try:
+        settings_str = await websocket.receive_text()
+        import json
+        settings = json.loads(settings_str)
+        enable_simplification = settings.get("simplify", False)
+        model_name = settings.get("model", "small")
+    except Exception:
+        enable_simplification = False
+        model_name = "small"
+
+    capture_thread = WasapiLoopbackCapture(
+        device_info=device,
+        ring=ring,
+        stop_event=stop_event,
+        gain=1.0,
+        block_ms=DEFAULT_BLOCK_MS
+    )
+    
+    asr_thread = WhisperStreamingWorker(
+        ring=ring,
+        stop_event=stop_event,
+        on_caption_update=on_caption_update,
+        model_name=model_name,
+        device="cpu",
+        compute_type="int8",
+        window_seconds=5.0,
+        inference_interval=0.7,
+        enable_simplification=enable_simplification
+    )
+    
+    capture_thread.start()
+    asr_thread.start()
+    
+    async def send_updates():
+        loop = asyncio.get_running_loop()
+        try:
+            while not stop_event.is_set():
+                # Block on queue safely in thread pool
+                payload = await loop.run_in_executor(None, update_queue.get)
+                if payload is None:
+                    break
+                await websocket.send_json(payload)
+        except Exception as e:
+            print("[SYSTEM AUDIO] Send task error:", e)
+
+    send_task = asyncio.create_task(send_updates())
+    
+    try:
+        while True:
+            # Block waiting for a close/stop message from frontend or keep alive
+            msg = await websocket.receive_text()
+            if msg == "stop":
+                break
+    except Exception:
+        pass
+    finally:
+        stop_event.set()
+        update_queue.put(None)
+        await send_task
+        capture_thread.join(timeout=1.0)
+        asr_thread.join(timeout=1.0)
+        helper.close()
+        print("[SYSTEM AUDIO] Cleaned up loopback session.")
+
 
 # =========================
 # 🔹 RUN SERVER
