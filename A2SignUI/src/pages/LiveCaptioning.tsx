@@ -145,9 +145,8 @@ const LiveCaptioning = () => {
   };
 
   const startSystemAudioCaptioning = () => {
-    const wsProto = window.location.protocol === "https:" ? "wss:" : "ws:";
-    const wsHost = API_BASE.replace(/^https?:\/\//, "");
-    const wsUrl = `${wsProto}//${wsHost}/ws/system-audio`;
+    // System audio loopback capture must always connect to the local host PC running the backend
+    const wsUrl = "ws://127.0.0.1:8000/ws/system-audio";
 
     const ws = new WebSocket(wsUrl);
     systemAudioWsRef.current = ws;
